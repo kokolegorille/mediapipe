@@ -48,4 +48,13 @@ npm i @mediapipe/face_mesh @mediapipe/camera_utils
 npm i @mediapipe/face_detection @mediapipe/hands
 npm i @mediapipe/holistic @mediapipe/objectron
 npm i @mediapipe/pose @mediapipe/selfie_segmentation
+npm i @mediapipe/drawing_utils
+```
+
+## Testing
+
+```
+cd mediapipe/
+npm i
+npm start
 ```
