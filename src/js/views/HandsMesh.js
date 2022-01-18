@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from "react"
-import { FaceMesh } from "@mediapipe/face_mesh"
-import * as Facemesh from "@mediapipe/face_mesh"
+import { Hands } from "@mediapipe/hands"
+import * as Handsmesh from "@mediapipe/hands"
+
 import * as cam from "@mediapipe/camera_utils"
 import Webcam from "react-webcam"
-import { drawConnectors } from "@mediapipe/drawing_utils/drawing_utils"
+import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils/drawing_utils"
 
-const FaceMeshView = () => {
+const HandsMesh = () => {
     const webcamRef = useRef()
     const canvasRef = useRef()
     const [canvasCtx, setCanvasCtx] = useState()
@@ -17,18 +18,11 @@ const FaceMeshView = () => {
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height)
             canvasCtx.drawImage(
                 results.image, 0, 0, canvasElement.width, canvasElement.height)
-            if (results.multiFaceLandmarks) {
-                for (const landmarks of results.multiFaceLandmarks) {
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION,
-                        { color: "#C0C0C070", lineWidth: 1 })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, { color: "#FF3030" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, { color: "#FF3030" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_IRIS, { color: "#FF3030" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, { color: "#30FF30" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, { color: "#30FF30" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_IRIS, { color: "#30FF30" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_FACE_OVAL, { color: "#E0E0E0" })
-                    drawConnectors(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, { color: "#E0E0E0" })
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, Handsmesh.HAND_CONNECTIONS,
+                        {color: '#00FF00', lineWidth: 5});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 2});
                 }
             }
             canvasCtx.restore()
@@ -42,20 +36,23 @@ const FaceMeshView = () => {
     }, [canvasRef.current])
 
     useEffect(() => {
-        const faceMesh = new FaceMesh({
-            locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        const hands = new Hands({
+            locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
         })
-        faceMesh.setOptions({
-            maxNumFaces: 3,
+        // https://github.com/google/mediapipe/issues/2181
+        // Add modelComplexity to force fetch!
+        hands.setOptions({
+            maxNumHands: 4,
             minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            minTrackingConfidence: 0.5,
+            modelComplexity: 1
         })
-        faceMesh.onResults(onResults)
+        hands.onResults(onResults)
         if (webcamRef.current) {
             const myCam = new cam.Camera(webcamRef.current.video, {
                 onFrame: async () => {
                     if (webcamRef.current) {
-                        await faceMesh.send({ image: webcamRef.current.video })
+                        await hands.send({ image: webcamRef.current.video })
                     }
                 },
                 width: 1280,
@@ -68,7 +65,7 @@ const FaceMeshView = () => {
 
     return (
         <div>
-            <h1>Face Mesh</h1>
+            <h1>Hands Mesh</h1>
             <Webcam
                 ref={webcamRef}
                 style={{
@@ -99,4 +96,4 @@ const FaceMeshView = () => {
     )
 }
 
-export default FaceMeshView
+export default HandsMesh
